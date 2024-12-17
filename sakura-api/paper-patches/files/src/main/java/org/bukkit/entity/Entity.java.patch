@@ -1,0 +1,25 @@
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -111,6 +_,22 @@
+      */
+     public boolean isInWater();
+ 
++    // Sakura start
++    /**
++     * Gets if the entity will be pushed by fluid.
++     *
++     * @return if this entity can be pushed by fluid.
++     */
++    boolean isPushedByFluid();
++
++    /**
++     * Sets if the entity will be pushed by fluid.
++     *
++     * @param state whether entity should be pushed by fluid
++     */
++    void setPushedByFluid(boolean state);
++    // Sakura end
++
+     /**
+      * Gets the current world this entity resides in
+      *

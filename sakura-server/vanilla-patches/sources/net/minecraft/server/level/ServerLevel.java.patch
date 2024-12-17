@@ -1,0 +1,77 @@
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -569,6 +_,21 @@
+         );
+     }
+     // Paper end - chunk tick iteration
++    // Sakura start - client visibility settings
++    public final LongSet explosionPositions = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
++
++    public final boolean checkExplosionVisibility(final Vec3 position, final ServerPlayer player) {
++        final me.samsuik.sakura.player.visibility.VisibilitySettings settings = player.visibilitySettings;
++        if (settings.isDisabled(me.samsuik.sakura.player.visibility.VisibilityTypes.EXPLOSIONS)) {
++            return false;
++        } else if (settings.isToggled(me.samsuik.sakura.player.visibility.VisibilityTypes.EXPLOSIONS)) {
++            final BlockPos blockPosition = BlockPos.containing(position);
++            final long encodedPosition = blockPosition.asLong();
++            return this.explosionPositions.add(encodedPosition);
++        }
++        return true;
++    }
++    // Sakura end - client visibility settings
+ 
+     public ServerLevel(
+         MinecraftServer server,
+@@ -588,7 +_,7 @@
+         org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
+     ) {
+         // CraftBukkit start
+-        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), dispatcher); // Paper - create paper world configs; Async-Anti-Xray: Pass executor
++        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), () -> server.sakuraConfigurations.createWorldConfig(me.samsuik.sakura.configuration.SakuraConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), server.registryAccess())), dispatcher); // Sakura - sakura configuration files // Paper - create paper world configs; Async-Anti-Xray: Pass executor
+         this.pvpMode = server.isPvpAllowed();
+         this.levelStorageAccess = levelStorageAccess;
+         this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
+@@ -795,6 +_,7 @@
+             }
+ 
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
++            Entity[] previousEntity = new Entity[1]; // Sakura - merge cannon entities
+             this.entityTickList
+                 .forEach(
+                     entity -> {
+@@ -813,6 +_,15 @@
+                                         entity.stopRiding();
+                                     }
+ 
++                                    // Sakura start - merge cannon entities
++                                    Entity previous = previousEntity[0];
++                                    if (this.mergeHandler.tryMerge(entity, previous)) {
++                                        return;
++                                    } else {
++                                        previousEntity[0] = entity;
++                                    }
++                                    // Sakura end - merge cannon entities
++
+                                     profilerFiller.push("tick");
+                                     this.guardEntityTick(this::tickNonPassenger, entity);
+                                     profilerFiller.pop();
+@@ -1806,7 +_,18 @@
+         for (ServerPlayer serverPlayer : this.players) {
+             if (serverPlayer.distanceToSqr(vec3) < 4096.0) {
+                 Optional<Vec3> optional = Optional.ofNullable(serverExplosion.getHitPlayers().get(serverPlayer));
+-                serverPlayer.connection.send(new ClientboundExplodePacket(vec3, optional, particleOptions, explosionSound));
++                // Sakura start - client visibility settings; let players toggle explosion particles
++                ParticleOptions particle = particleOptions;
++                Vec3 position = vec3;
++                // In 1.22 and later this should be replaced with sending the motion through a PlayerPositionPacket.
++                // The problem here is SetEntityMotion is capped to 3.9 b/pt and the only other alternate mean was
++                // implemented in 1.21.3. I believe it's best to just wait on this issue and deal with this hack.
++                if (!this.checkExplosionVisibility(vec3, serverPlayer)) {
++                    position = new Vec3(0.0, -1024.0, 0.0);
++                    particle = net.minecraft.core.particles.ParticleTypes.SMOKE;
++                }
++                serverPlayer.connection.send(new ClientboundExplodePacket(position, optional, particle, explosionSound));
++                // Sakura end - client visibility settings; let players toggle explosion particles
+             }
+         }
+ 

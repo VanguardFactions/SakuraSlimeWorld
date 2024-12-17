@@ -1,0 +1,36 @@
+--- a/net/minecraft/world/level/block/BasePressurePlateBlock.java
++++ b/net/minecraft/world/level/block/BasePressurePlateBlock.java
+@@ -91,7 +_,7 @@
+     }
+ 
+     private void checkPressed(@Nullable Entity entity, Level level, BlockPos pos, BlockState state, int currentSignal) {
+-        int signalStrength = this.getSignalStrength(level, pos);
++        int signalStrength = this.getSignalStrength(level, pos, output == 0); // Sakura - merge cannon entities
+         boolean flag = currentSignal > 0;
+         boolean flag1 = signalStrength > 0;
+         
+@@ -109,6 +_,11 @@
+         // CraftBukkit end
+         if (currentSignal != signalStrength) {
+             BlockState blockState = this.setSignalForState(state, signalStrength);
++            // Sakura start - replace explosion density cache
++            if (!level.paperConfig().environment.optimizeExplosions) {
++                level.densityCache.invalidate();
++            }
++            // Sakura end - replace explosion density cache
+             level.setBlock(pos, blockState, 2);
+             this.updateNeighbours(level, pos);
+             level.setBlocksDirty(pos, state, blockState);
+@@ -167,6 +_,12 @@
+         return level.getEntitiesOfClass(entityClass, box, EntitySelector.NO_SPECTATORS.and(entity -> !entity.isIgnoringBlockTriggers()));
+         // CraftBukkit end
+     }
++
++    // Sakura start - merge cannon entities
++    protected int getSignalStrength(Level world, BlockPos pos, boolean entityInside) {
++        return this.getSignalStrength(world, pos);
++    }
++    // Sakura end - merge cannon entities
+ 
+     protected abstract int getSignalStrength(Level level, BlockPos pos);
+ 

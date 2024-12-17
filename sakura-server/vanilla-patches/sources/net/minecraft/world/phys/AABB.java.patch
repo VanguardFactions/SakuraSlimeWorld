@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/phys/AABB.java
++++ b/net/minecraft/world/phys/AABB.java
+@@ -442,4 +_,28 @@
+             center.x - xSize / 2.0, center.y - ySize / 2.0, center.z - zSize / 2.0, center.x + xSize / 2.0, center.y + ySize / 2.0, center.z + zSize / 2.0
+         );
+     }
++
++    // Sakura start - replace explosion density cache
++    public final boolean isAABBInBounds(AABB bb) {
++        return this.minX <= bb.minX && this.maxX >= bb.maxX
++            && this.minY <= bb.minY && this.maxY >= bb.maxY
++            && this.minZ <= bb.minZ && this.maxZ >= bb.maxZ;
++    }
++
++    public final boolean isVec3InBounds(Vec3 p) {
++        return this.minX <= p.x && this.maxX >= p.x
++            && this.minY <= p.y && this.maxY >= p.y
++            && this.minZ <= p.z && this.maxZ >= p.z;
++    }
++
++    public final AABB expand(Vec3 pos) {
++        double minX = Math.min(this.minX, pos.x);
++        double minY = Math.min(this.minY, pos.y);
++        double minZ = Math.min(this.minZ, pos.z);
++        double maxX = Math.max(this.maxX, pos.x);
++        double maxY = Math.max(this.maxY, pos.y);
++        double maxZ = Math.max(this.maxZ, pos.z);
++        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
++    }
++    // Sakura end - replace explosion density cache
+ }

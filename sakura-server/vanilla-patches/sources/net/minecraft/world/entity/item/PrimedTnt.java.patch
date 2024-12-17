@@ -1,0 +1,137 @@
+--- a/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -33,7 +_,7 @@
+ import org.bukkit.event.entity.ExplosionPrimeEvent;
+ // CraftBukkit end
+ 
+-public class PrimedTnt extends Entity implements TraceableEntity {
++public class PrimedTnt extends Entity implements TraceableEntity, me.samsuik.sakura.entity.merge.MergeableEntity { // Sakura - merge cannon entities
+     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.INT);
+     private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.BLOCK_STATE);
+     private static final int DEFAULT_FUSE_TIME = 80;
+@@ -58,9 +_,60 @@
+     public float explosionPower = 4.0F;
+     public boolean isIncendiary = false; // CraftBukkit - add field
+ 
++    // Sakura start - merge cannon entities
++    private final me.samsuik.sakura.entity.merge.MergeEntityData mergeData = new me.samsuik.sakura.entity.merge.MergeEntityData(this);
++
++    @Override
++    public final me.samsuik.sakura.entity.merge.MergeEntityData getMergeEntityData() {
++        return this.mergeData;
++    }
++
++    @Override
++    public final boolean isSafeToMergeInto(me.samsuik.sakura.entity.merge.MergeableEntity entity, boolean ticksLived) {
++        return entity instanceof PrimedTnt tnt
++            && tnt.getFuse() + 1 == this.getFuse()
++            // required to prevent issues with powdered snow
++            && (tnt.entityState().fallDistance() == this.fallDistance
++            || tnt.entityState().fallDistance() > 2.5f && this.fallDistance > 2.5f);
++    }
++
++    @Override
++    public final void respawnEntity(int count) {
++        PrimedTnt tnt = new PrimedTnt(EntityType.TNT, this.level());
++        tnt.updateBukkitHandle(this); // update handle for plugins
++        while (count-- > 1) {
++            this.setFuse(100); // Prevent unwanted explosions while ticking
++
++            // Cause an explosion to affect this entity
++            tnt.setPos(this.position());
++            tnt.setDeltaMovement(this.getDeltaMovement());
++            this.entityState().apply(this);
++            tnt.explode();
++            this.storeEntityState();
++
++            this.tick();
++        }
++    }
++    // Sakura end - merge cannon entities
++    // Sakura start - optimise tnt fluid state
++    @Override
++    protected final boolean updateInWaterStateAndDoFluidPushing() {
++        if (this.isPushedByFluid()) {
++            return super.updateInWaterStateAndDoFluidPushing();
++        } else {
++            // Lava is not a fall damage resetting block, there's no reason to search for it when tnt flow is disabled.
++            this.fluidHeight.clear();
++            this.updateInWaterStateAndDoWaterCurrentPushing();
++            return this.isInWater();
++        }
++    }
++    // Sakura end - optimise tnt fluid state
++
+     public PrimedTnt(EntityType<? extends PrimedTnt> entityType, Level level) {
+         super(entityType, level);
+         this.blocksBuilding = true;
++        this.isPrimedTNT = true; // Sakura
++        this.mergeData.setMergeLevel(level.sakuraConfig().cannons.mergeLevel); // Sakura - merge cannon entities
+     }
+ 
+     public PrimedTnt(Level level, double x, double y, double z, @Nullable LivingEntity owner) {
+@@ -73,6 +_,12 @@
+         this.yo = y;
+         this.zo = z;
+         this.owner = owner;
++        // Sakura start - configure cannon mechanics
++        switch (level.sakuraConfig().cannons.mechanics.tntSpread) {
++            case NONE -> this.setDeltaMovement(0.0, 0.0, 0.0);
++            case Y -> this.setDeltaMovement(this.getDeltaMovement().multiply(0.0, 1.0, 0.0));
++        }
++        // Sakura end - configure cannon mechanics
+     }
+ 
+     @Override
+@@ -119,6 +_,7 @@
+         if (i <= 0) {
+             // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
+             //this.discard();
++            this.respawnEntity(); // Sakura - merge cannon entities
+             if (!this.level().isClientSide) {
+                 this.explode();
+             }
+@@ -130,6 +_,14 @@
+                 this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5, this.getZ(), 0.0, 0.0, 0.0);
+             }
+         }
++        // Sakura start - configure force position updates
++        if (this.level().sakuraConfig().cannons.tnt.forcePositionUpdates) {
++            this.sendPositionAndVelocityUpdateInWater();
++        }
++    }
++
++    private void sendPositionAndVelocityUpdateInWater() {
++        // Sakura end - configure force position updates
+         // Paper start - Option to prevent TNT from moving in water
+         if (!this.isRemoved() && this.wasTouchingWater && this.level().paperConfig().fixes.preventTntFromMovingInWater) {
+             /*
+@@ -181,6 +_,7 @@
+         if (this.explosionPower != 4.0F) {
+             compound.putFloat("explosion_power", this.explosionPower);
+         }
++        compound.putInt("merge_count", this.mergeData.getCount()); // Sakura - merge cannon entities
+     }
+ 
+     @Override
+@@ -193,6 +_,11 @@
+         if (compound.contains("explosion_power", 99)) {
+             this.explosionPower = Mth.clamp(compound.getFloat("explosion_power"), 0.0F, 128.0F);
+         }
++        // Sakura start - merge cannon entities
++        if (compound.contains("merge_count", 3)) {
++            this.mergeData.setCount(compound.getInt("merge_count"));
++        }
++        // Sakura end - merge cannon entities
+     }
+ 
+     @Nullable
+@@ -248,7 +_,7 @@
+     // Paper start - Option to prevent TNT from moving in water
+     @Override
+     public boolean isPushedByFluid() {
+-        return !this.level().paperConfig().fixes.preventTntFromMovingInWater && super.isPushedByFluid();
++        return !this.level().paperConfig().fixes.preventTntFromMovingInWater && this.level().sakuraConfig().cannons.mechanics.tntFlowsInWater && super.isPushedByFluid(); // Sakura - configure cannon mechanics
+     }
+     // Paper end - Option to prevent TNT from moving in water
+ }

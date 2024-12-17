@@ -1,0 +1,16 @@
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -284,6 +_,13 @@
+     }
+     // Paper end
+ 
++    // Sakura start - add local config
++    @Override
++    public final me.samsuik.sakura.local.storage.LocalStorageHandler getStorageHandler() {
++        return this.getHandle().localConfig();
++    }
++    // Sakura end - add local config
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {

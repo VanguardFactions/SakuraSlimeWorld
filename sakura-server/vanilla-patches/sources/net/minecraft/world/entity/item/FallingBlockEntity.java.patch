@@ -1,0 +1,109 @@
+--- a/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -54,7 +_,7 @@
+ import org.bukkit.event.entity.EntityRemoveEvent;
+ // CraftBukkit end
+ 
+-public class FallingBlockEntity extends Entity {
++public class FallingBlockEntity extends Entity implements me.samsuik.sakura.entity.merge.MergeableEntity { // Sakura - merge cannon entities
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public BlockState blockState = Blocks.SAND.defaultBlockState();
+     public int time;
+@@ -68,9 +_,69 @@
+     public boolean forceTickAfterTeleportToDuplicate;
+     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
+     public boolean autoExpire = true; // Paper - Expand FallingBlock API
++    public boolean heightParity; // Sakura - falling block parity api
++
++    // Sakura start - merge cannon entities
++    private final me.samsuik.sakura.entity.merge.MergeEntityData mergeData = new me.samsuik.sakura.entity.merge.MergeEntityData(this);
++
++    @Override
++    public final me.samsuik.sakura.entity.merge.MergeEntityData getMergeEntityData() {
++        return this.mergeData;
++    }
++
++    @Override
++    public final boolean isSafeToMergeInto(me.samsuik.sakura.entity.merge.MergeableEntity entity, boolean ticksLived) {
++        return entity instanceof FallingBlockEntity fbe
++            && fbe.blockState.equals(this.blockState)
++            && (!ticksLived || fbe.time - 1 == this.time);
++    }
++
++    @Override
++    public final void respawnEntity(int count) {
++        while (count-- >= 1) {
++            // Unlike PrimedTnt we have to try respawn each stacked entity
++            FallingBlockEntity fallingBlock = new FallingBlockEntity(EntityType.FALLING_BLOCK, this.level());
++
++            // Try to stack the falling block
++            this.entityState().apply(fallingBlock);
++            fallingBlock.blockState = this.blockState;
++            fallingBlock.spawnReason = this.spawnReason;
++            fallingBlock.time = this.time - 1;
++            fallingBlock.tick();
++
++            // If you horizontal stack into a moving piston block this condition will be met.
++            if (!fallingBlock.isRemoved()) {
++                this.mergeData.setCount(count + 1);
++                fallingBlock.storeEntityState();
++                fallingBlock.entityState().apply(this);
++                break;
++            } else if (count == 0) {
++                this.discard(EntityRemoveEvent.Cause.DESPAWN);
++            }
++        }
++    }
++
++    @Override
++    public @Nullable ItemEntity spawnAtLocation(ServerLevel level, net.minecraft.world.level.ItemLike item) {
++        ItemEntity itemEntity = null;
++        for (int i = 0; i < this.mergeData.getCount(); ++i) {
++            itemEntity = super.spawnAtLocation(level, item);
++        }
++        return itemEntity;
++    }
++    // Sakura end - merge cannon entities
++    // Sakura start - falling block parity api
++    @Override
++    public final double getEyeY() {
++        return this.heightParity ? this.getY() : super.getEyeY();
++    }
++    // Sakura end - falling block parity api
+ 
+     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> entityType, Level level) {
+         super(entityType, level);
++        this.isFallingBlock = true; // Sakura
++        this.mergeData.setMergeLevel(level.sakuraConfig().cannons.mergeLevel); // Sakura - merge cannon entities
++        this.heightParity = level.sakuraConfig().cannons.mechanics.fallingBlockParity; // Sakura - configure cannon mechanics
+     }
+ 
+     public FallingBlockEntity(Level level, double x, double y, double z, BlockState state) {
+@@ -211,6 +_,7 @@
+                                     return;
+                                 }
+                                 // CraftBukkit end
++                                if (this.respawnEntity()) return; // Sakura - merge cannon entities
+                                 if (this.level().setBlock(blockPos, this.blockState, 3)) {
+                                     ((ServerLevel)this.level())
+                                         .getChunkSource()
+@@ -313,6 +_,7 @@
+ 
+         compound.putBoolean("CancelDrop", this.cancelDrop);
+         if (!this.autoExpire) compound.putBoolean("Paper.AutoExpire", false); // Paper - Expand FallingBlock API
++        compound.putInt("merge_count", this.mergeData.getCount()); // Sakura - merge cannon entities
+     }
+ 
+     @Override
+@@ -345,6 +_,11 @@
+             this.autoExpire = compound.getBoolean("Paper.AutoExpire");
+         }
+         // Paper end - Expand FallingBlock API
++        // Sakura start - merge cannon entities
++        if (compound.contains("merge_count", 3)) {
++            this.mergeData.setCount(compound.getInt("merge_count"));
++        }
++        // Sakura end - merge cannon entities
+     }
+ 
+     public void setHurtsEntities(float fallDamagePerDistance, int fallDamageMax) {

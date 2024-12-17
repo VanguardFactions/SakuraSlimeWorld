@@ -1,0 +1,42 @@
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+@@ -14,6 +_,39 @@
+         super(server, entity);
+     }
+ 
++    // Sakura start - merge cannon entities
++    @Override
++    public @org.jetbrains.annotations.NotNull me.samsuik.sakura.entity.merge.MergeLevel getMergeLevel() {
++        return this.getHandle().getMergeEntityData().getMergeLevel();
++    }
++
++    @Override
++    public void setMergeLevel(@org.jetbrains.annotations.NotNull me.samsuik.sakura.entity.merge.MergeLevel level) {
++        this.getHandle().getMergeEntityData().setMergeLevel(level);
++    }
++
++    @Override
++    public int getStacked() {
++        return this.getHandle().getMergeEntityData().getCount();
++    }
++
++    @Override
++    public void setStacked(int stacked) {
++        this.getHandle().getMergeEntityData().setCount(stacked);
++    }
++    // Sakura end - merge cannon entities
++    // Sakura start - falling block parity api
++    @Override
++    public void setHeightParity(boolean parity) {
++        this.getHandle().heightParity = parity;
++    }
++
++    @Override
++    public boolean getHeightParity() {
++        return this.getHandle().heightParity;
++    }
++    // Sakura end - falling block parity api
++
+     @Override
+     public FallingBlockEntity getHandle() {
+         return (FallingBlockEntity) this.entity;

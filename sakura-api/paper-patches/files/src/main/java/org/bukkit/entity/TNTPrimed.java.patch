@@ -1,0 +1,11 @@
+--- a/src/main/java/org/bukkit/entity/TNTPrimed.java
++++ b/src/main/java/org/bukkit/entity/TNTPrimed.java
+@@ -6,7 +_,7 @@
+ /**
+  * Represents a Primed TNT.
+  */
+-public interface TNTPrimed extends Explosive {
++public interface TNTPrimed extends Explosive, me.samsuik.sakura.entity.merge.Mergeable { // Sakura
+ 
+     /**
+      * Set the number of ticks until the TNT blows up after being primed.

@@ -1,0 +1,10 @@
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3085,6 +_,7 @@
+ 
+                         event.setCancelled(cancelled);
+                         AbstractContainerMenu oldContainer = this.player.containerMenu; // SPIGOT-1224
++                        me.samsuik.sakura.player.gui.FeatureGui.clickEvent(event); // Sakura - client visibility settings
+                         this.cserver.getPluginManager().callEvent(event);
+                         if (this.player.containerMenu != oldContainer) {
+                             return;

@@ -1,0 +1,31 @@
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+@@ -12,6 +_,28 @@
+         super(server, entity);
+     }
+ 
++    // Sakura start - merge cannon entities
++    @Override
++    public @org.jetbrains.annotations.NotNull me.samsuik.sakura.entity.merge.MergeLevel getMergeLevel() {
++        return this.getHandle().getMergeEntityData().getMergeLevel();
++    }
++
++    @Override
++    public void setMergeLevel(@org.jetbrains.annotations.NotNull me.samsuik.sakura.entity.merge.MergeLevel level) {
++        this.getHandle().getMergeEntityData().setMergeLevel(level);
++    }
++
++    @Override
++    public int getStacked() {
++        return this.getHandle().getMergeEntityData().getCount();
++    }
++
++    @Override
++    public void setStacked(int stacked) {
++        this.getHandle().getMergeEntityData().setCount(stacked);
++    }
++    // Sakura end - merge cannon entities
++
+     @Override
+     public float getYield() {
+         return this.getHandle().explosionPower;

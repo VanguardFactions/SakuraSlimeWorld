@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Samsuik <kfian294ma4@gmail.com>
+Date: Thu, 19 Dec 2024 19:07:36 +0000
+Subject: [PATCH] AT Helpers
+
+Remove this patch when paper access transformers are fixed.
+
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 109e569b7ba6419d60c6490b588937579b4f6878..3cb3e826325c6f66006bb39bb3699be8b836d566 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -94,7 +94,7 @@ public abstract class Configurations<G, W> {
+         };
+     }
+ 
+-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
++    protected static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
+         return node -> {
+             ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
+             ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index 098ab351de4f84cdc943ebe855dd0022174e1e67..200bc730ca2f59bf11bdefc896d53fa46c137836 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -167,7 +167,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+             .defaultOptions(PaperConfigurations::defaultOptions);
+     }
+ 
+-    private static ConfigurationOptions defaultOptions(ConfigurationOptions options) {
++    protected static ConfigurationOptions defaultOptions(ConfigurationOptions options) {
+         return options.serializers(builder -> builder
+             .register(MapSerializer.TYPE, new MapSerializer(false))
+             .register(new EnumValueSerializer())
+@@ -462,7 +462,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+     }
+ 
+     // Symlinks are not correctly checked in createDirectories
+-    static void createDirectoriesSymlinkAware(Path path) throws IOException {
++    protected static void createDirectoriesSymlinkAware(Path path) throws IOException {
+         if (!Files.isDirectory(path)) {
+             Files.createDirectories(path);
+         }
