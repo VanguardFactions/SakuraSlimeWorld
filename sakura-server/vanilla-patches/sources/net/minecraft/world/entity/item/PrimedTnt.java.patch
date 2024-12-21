@@ -50,7 +50,7 @@
 +    // Sakura end - merge cannon entities
 +    // Sakura start - optimise tnt fluid state
 +    @Override
-+    protected final boolean updateInWaterStateAndDoFluidPushing() {
++    protected boolean updateInWaterStateAndDoFluidPushing() {
 +        if (this.isPushedByFluid()) {
 +            return super.updateInWaterStateAndDoFluidPushing();
 +        } else {

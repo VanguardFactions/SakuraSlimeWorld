@@ -52,3 +52,32 @@
              consumerEntity.accept(entity);
          } catch (Throwable var6) {
              // Paper start - Prevent block entity and entity crashes
+@@ -1774,10 +_,18 @@
+         this.getEntities(entityTypeTest, bounds, predicate, output, Integer.MAX_VALUE);
+     }
+ 
+-    // Paper start - rewrite chunk system
++    // Sakura start - add maxSearch to getEntities
+     public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
+                                                final AABB boundingBox, final Predicate<? super T> predicate,
+                                                final List<? super T> into, final int maxCount) {
++        this.getEntities(entityTypeTest, boundingBox, predicate, into, maxCount, Integer.MAX_VALUE);
++    }
++
++    // Paper start - rewrite chunk system
++    public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
++                                               final AABB boundingBox, final Predicate<? super T> predicate,
++                                               final List<? super T> into, final int maxCount, final int maxSearch) {
++        // Sakura end - add maxSearch to getEntities
+         Profiler.get().incrementCounter("getEntities");
+ 
+         if (entityTypeTest instanceof net.minecraft.world.entity.EntityType<T> byType) {
+@@ -1794,7 +_,7 @@
+ 
+         if (entityTypeTest == null) {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount);
++                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount, maxSearch); // Sakura - add maxSearch to getEntities
+                 ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {

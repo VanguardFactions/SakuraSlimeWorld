@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1479,7 +_,7 @@
+                     }
+                     // Paper end - Check distance in entity interactions
+ 
+-                    this.knockback(0.4F, d, d1, damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
++                    this.knockback(this.level().sakuraConfig().players.knockback.baseKnockback, d, d1, damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events // Sakura - configure entity knockback
+                     if (!flag) {
+                         this.indicateDamage(d, d1);
+                     }
+@@ -1570,7 +_,7 @@
+     }
+ 
+     protected void blockedByShield(LivingEntity defender) {
+-        defender.knockback(0.5, defender.getX() - this.getX(), defender.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
++        defender.knockback(this.level().sakuraConfig().players.knockback.shieldHitKnockback, defender.getX() - this.getX(), defender.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events // Sakura - configure entity knockback
+     }
+ 
+     private boolean checkTotemDeathProtection(DamageSource damageSource) {
+@@ -1918,7 +_,7 @@
+     }
+ 
+     public void knockback(double strength, double x, double z, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
+-        strength *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
++        strength *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE) * this.level().sakuraConfig().players.knockback.knockbackResistanceModifier; // Sakura - configure entity knockback
+         if (true || !(strength <= 0.0)) { // CraftBukkit - Call event even when force is 0
+             // this.hasImpulse = true; // CraftBukkit - Move down
+             Vec3 deltaMovement = this.getDeltaMovement();
+@@ -1929,10 +_,18 @@
+             }
+ 
+             Vec3 vec3 = new Vec3(x, 0.0, z).normalize().scale(strength);
++            // Sakura start - configure entity knockback
++            double velocityY = deltaMovement.y / 2.0D + this.level().sakuraConfig().players.knockback.knockbackVertical.or(strength);
++            if (!this.level().sakuraConfig().players.knockback.verticalKnockbackRequireGround || this.onGround()) {
++                velocityY = Math.min(this.level().sakuraConfig().players.knockback.knockbackVerticalLimit, velocityY);
++            } else {
++                velocityY = deltaMovement.y;
++            }
++            // Sakura end - configure entity knockback
+             // Paper start - knockback events
+             Vec3 finalVelocity = new Vec3(
+                 deltaMovement.x / 2.0 - vec3.x,
+-                this.onGround() ? Math.min(0.4, deltaMovement.y / 2.0 + strength) : deltaMovement.y,
++                velocityY, // Sakura - configure entity knockback
+                 deltaMovement.z / 2.0 - vec3.z
+             );
+             Vec3 diff = finalVelocity.subtract(deltaMovement);
+@@ -3558,7 +_,12 @@
+                 return;
+             }
+             // Paper end - don't run getEntities if we're not going to use its result
+-            List<Entity> entities = this.level().getEntities(this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - Climbing should not bypass cramming gamerule
++            // Sakura start - use maxEntityCollision limit for entity retrieval
++            int limit = Math.max(_int, this.level().paperConfig().collisions.maxEntityCollisions);
++            int search = limit * limit;
++            List<Entity> entities = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++            this.level().getEntities(null, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule), entities, limit, search); // Paper - Climbing should not bypass cramming gamerule
++            // Sakura end - use maxEntityCollision limit for entity retrieval
+             if (!entities.isEmpty()) {
+                 // Paper - don't run getEntities if we're not going to use its result; moved up
+                 if (_int > 0 && entities.size() > _int - 1 && this.random.nextInt(4) == 0) {

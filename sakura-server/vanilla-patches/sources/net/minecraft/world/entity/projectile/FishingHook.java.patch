@@ -1,0 +1,15 @@
+--- a/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -288,6 +_,12 @@
+         if (!this.level().isClientSide) {
+             this.setHookedEntity(result.getEntity());
+         }
++        // Sakura start - configure entity knockback
++        if (this.level().sakuraConfig().players.knockback.fishingHooksApplyKnockback) {
++            Entity entity = result.getEntity();
++            entity.hurt(this.damageSources().thrown(this, this.getOwner()), 0.0f);
++        }
++        // Sakura end - configure entity knockback
+     }
+ 
+     @Override

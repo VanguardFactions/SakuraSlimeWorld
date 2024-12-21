@@ -79,6 +79,15 @@
      }
  
      public FallingBlockEntity(Level level, double x, double y, double z, BlockState state) {
+@@ -181,7 +_,7 @@
+                     }
+                 }
+ 
+-                if (!this.onGround() && !flag1) {
++                if (!this.onGround() && !flag1 || this.level().sakuraConfig().cannons.sand.despawnInsideMovingPistons && this.autoExpire && this.time > 600) { // Sakura - Allow falling blocks to despawn inside moving pistons
+                     if ((this.time > 100 && autoExpire) && (blockPos.getY() <= this.level().getMinY() || blockPos.getY() > this.level().getMaxY()) || (this.time > 600 && autoExpire)) { // Paper - Expand FallingBlock API
+                         if (this.dropItem && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                             this.spawnAtLocation(serverLevel, block);
 @@ -211,6 +_,7 @@
                                      return;
                                  }

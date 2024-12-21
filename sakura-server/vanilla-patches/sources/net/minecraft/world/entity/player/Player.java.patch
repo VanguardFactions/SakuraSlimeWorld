@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -200,6 +_,7 @@
+     private int currentImpulseContextResetGraceTime;
+     public boolean affectsSpawning = true; // Paper - Affects Spawning API
+     public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
++    private long lastSprintKnockback = -1; // Sakura - configure entity knockback
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+@@ -1244,7 +_,7 @@
+                     if (f > 0.0F || f1 > 0.0F) {
+                         boolean flag = attackStrengthScale > 0.9F;
+                         boolean flag1;
+-                        if (this.isSprinting() && flag) {
++                        if (this.isSprinting() && (!this.level().sakuraConfig().players.knockback.sprinting.requireFullAttack || flag)) { // Sakura - configure entity knockback
+                             this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             flag1 = true;
+                         } else {
+@@ -1287,7 +_,21 @@
+                         if (flag4) {
+                             float f4 = this.getKnockback(target, damageSource) + (flag1 ? 1.0F : 0.0F);
+                             if (f4 > 0.0F) {
+-                                if (target instanceof LivingEntity livingEntity1) {
++                                // Sakura start - configure entity knockback; extra sprinting knockback
++                                long millis = System.currentTimeMillis();
++                                long sinceLastKnockback = millis - this.lastSprintKnockback;
++                                if (flag1) { // attackHasExtraKnockback
++                                    double knockbackToApply = 0.0;
++                                    if (sinceLastKnockback >= this.level().sakuraConfig().players.knockback.sprinting.knockbackDelay.value().orElse(0)) {
++                                        knockbackToApply = this.level().sakuraConfig().players.knockback.sprinting.extraKnockback;
++                                        this.lastSprintKnockback = millis;
++                                    }
++                                    f4 = (f4 - 1.0f) + ((float) knockbackToApply * 2.0f);
++                                }
++                                if (f4 == 0.0f) {
++                                    // required
++                                } else if (target instanceof LivingEntity livingEntity1) {
++                                    // Sakura end - configure entity knockback; extra sprinting knockback
+                                     livingEntity1.knockback(
+                                         f4 * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
+                                         , this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // Paper - knockback events
+@@ -1326,7 +_,7 @@
+                                         }
+                                         // CraftBukkit end
+                                         livingEntity2.knockback(
+-                                            0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
++                                            this.level().sakuraConfig().players.knockback.sweepingEdgeKnockback, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) // Sakura - configure entity knockback
+                                             , this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK // CraftBukkit // Paper - knockback events
+                                         );
+                                         // CraftBukkit - moved up

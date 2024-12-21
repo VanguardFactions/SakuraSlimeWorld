@@ -197,7 +197,7 @@ index a4865794f1c6b0f3dde3f6196c27694fc3b39960..2190a2cf7206805b8baafe62053f6dde
      }
  
 diff --git a/net/minecraft/world/entity/item/FallingBlockEntity.java b/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 6ae6561c186fea0571dff7f358c385a25816cf2a..1430c531aa78913155c1e55614fa9f6a642f02df 100644
+index cbf11e0eaf2cc7d7edfb7f96ec97e0ab3464f18d..1bc40548e05031b294e6758350aa227aa9594366 100644
 --- a/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -176,7 +176,7 @@ public class FallingBlockEntity extends Entity implements me.samsuik.sakura.enti
@@ -210,7 +210,7 @@ index 6ae6561c186fea0571dff7f358c385a25816cf2a..1430c531aa78913155c1e55614fa9f6a
  
      public BlockPos getStartPos() {
 diff --git a/net/minecraft/world/entity/item/PrimedTnt.java b/net/minecraft/world/entity/item/PrimedTnt.java
-index 8960856d9247eef1b4f07fc5c90da746c2e2146a..8de5bd0565a0cd209d5023377c7b7f82088caec8 100644
+index dff1487b6783c869a4e16e879b738bad37a8bc81..96f6d31af5b1855dede7d450d8d6549004a732a5 100644
 --- a/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -282,7 +282,7 @@ public class PrimedTnt extends Entity implements TraceableEntity, me.samsuik.sak
@@ -223,10 +223,10 @@ index 8960856d9247eef1b4f07fc5c90da746c2e2146a..8de5bd0565a0cd209d5023377c7b7f82
  
      public int getFuse() {
 diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
-index 58932bc9256e9e2ff054ac007971c03187851b53..185cb96aa5b8461359c008167923b5719995c6c1 100644
+index ce1384f09ce9908a349f1934a1229207634ac5f2..7f457836dd03ce0b74aa5860d75661d1a9b9bf0c 100644
 --- a/net/minecraft/world/entity/player/Player.java
 +++ b/net/minecraft/world/entity/player/Player.java
-@@ -672,7 +672,7 @@ public abstract class Player extends LivingEntity {
+@@ -673,7 +673,7 @@ public abstract class Player extends LivingEntity {
  
      public void increaseScore(int score) {
          int score1 = this.getScore();
