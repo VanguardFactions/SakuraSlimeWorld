@@ -1,0 +1,42 @@
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2403,6 +_,13 @@
+                 handle.keepLevel = data.getBoolean("keepLevel");
+             }
+         }
++
++        // Sakura start - client visibility settings; load from nbt
++        if (nbttagcompound.contains("sakura", 10)) {
++            CompoundTag sakuraTag = nbttagcompound.getCompound("sakura");
++            this.getHandle().visibilitySettings.loadData(sakuraTag);
++        }
++        // Sakura end - client visibility settings; load from nbt
+     }
+ 
+     public void setExtraData(CompoundTag nbttagcompound) {
+@@ -2432,6 +_,11 @@
+         paper.putLong("LastLogin", handle.loginTime);
+         paper.putLong("LastSeen", System.currentTimeMillis());
+         // Paper end
++        // Sakura start - client visibility settings; save to nbt
++        CompoundTag sakuraTag = nbttagcompound.getCompound("sakura");
++        this.getHandle().visibilitySettings.saveData(sakuraTag);
++        nbttagcompound.put("sakura", sakuraTag);
++        // Sakura end - client visibility settings; save to nbt
+     }
+ 
+     @Override
+@@ -3090,6 +_,13 @@
+     public boolean isAllowingServerListings() {
+         return this.getHandle().allowsListing();
+     }
++
++    // Sakura start - client visibility settings; api
++    @Override
++    public final me.samsuik.sakura.player.visibility.VisibilitySettings getVisibility() {
++        return this.getHandle().visibilitySettings;
++    }
++    // Sakura end - client visibility settings; api
+ 
+     // Paper start
+     @Override

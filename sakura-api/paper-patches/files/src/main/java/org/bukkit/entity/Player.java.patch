@@ -1,0 +1,23 @@
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -60,6 +_,20 @@
+  */
+ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
+ 
++    // Sakura start - client visibility settings
++    /**
++     * Visibility API for FPS settings.
++     *
++     * @return visibility api
++     */
++    me.samsuik.sakura.player.visibility.VisibilitySettings getVisibility();
++    // Sakura end - client visibility settings
++    // Sakura start - entity tracking range modifier
++    double getTrackingRangeModifier();
++
++    void setTrackingRangeModifier(double mod);
++    // Sakura end - entity tracking range modifier
++
+     // Paper start
+     @Override
+     default net.kyori.adventure.identity.@NotNull Identity identity() {

@@ -1,0 +1,50 @@
+--- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -52,6 +_,22 @@
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+     protected static final net.minecraft.resources.ResourceLocation MINECRAFT_BRAND = net.minecraft.resources.ResourceLocation.withDefaultNamespace("brand"); // Paper - Brand support
+ 
++    // Sakura start - client visibility settings
++    private @Nullable Packet<?> recreatePacket(final Packet<?> packet) {
++        final me.samsuik.sakura.player.visibility.VisibilitySettings settings = this.player.visibilitySettings;
++        if (packet instanceof net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket bedPacket) {
++            if (settings.isToggled(me.samsuik.sakura.player.visibility.VisibilityTypes.SPAWNERS) && bedPacket.getType() == net.minecraft.world.level.block.entity.BlockEntityType.MOB_SPAWNER) {
++                return null;
++            }
++        } else if (packet instanceof net.minecraft.network.protocol.game.ClientboundBlockEventPacket bePacket) {
++            if (settings.isToggled(me.samsuik.sakura.player.visibility.VisibilityTypes.PISTONS) && bePacket.getBlock() instanceof net.minecraft.world.level.block.piston.PistonBaseBlock) {
++                return null;
++            }
++        }
++        return packet;
++    }
++    // Sakura end - client visibility settings
++
+     public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, net.minecraft.server.level.ServerPlayer player) { // CraftBukkit
+         this.server = server;
+         this.connection = connection;
+@@ -285,6 +_,12 @@
+         } else if (packet instanceof net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket defaultSpawnPositionPacket) {
+             this.player.compassTarget = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(defaultSpawnPositionPacket.getPos(), this.getCraftPlayer().getWorld());
+         }
++        // Sakura start - client visibility settings
++        if (this.player.visibilitySettings.playerModified()) {
++            packet = this.recreatePacket(packet);
++            if (packet == null) return;
++        }
++        // Sakura end - client visibility settings
+         // CraftBukkit end
+         if (packet.isTerminal()) {
+             this.close();
+@@ -297,7 +_,10 @@
+         } catch (Throwable var7) {
+             CrashReport crashReport = CrashReport.forThrowable(var7, "Sending packet");
+             CrashReportCategory crashReportCategory = crashReport.addCategory("Packet being sent");
+-            crashReportCategory.setDetail("Packet class", () -> packet.getClass().getCanonicalName());
++            // Sakura start - client visibility settings; packet has to be effectively final
++            final Packet<?> packetFinal = packet;
++            crashReportCategory.setDetail("Packet class", () -> packetFinal.getClass().getCanonicalName());
++            // Sakura end - client visibility settings; packet has to be effectively final
+             throw new ReportedException(crashReport);
+         }
+     }

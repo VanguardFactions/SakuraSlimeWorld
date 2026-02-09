@@ -1,0 +1,31 @@
+--- a/src/main/java/org/bukkit/entity/FallingBlock.java
++++ b/src/main/java/org/bukkit/entity/FallingBlock.java
+@@ -7,7 +_,7 @@
+ /**
+  * Represents a falling block
+  */
+-public interface FallingBlock extends Entity {
++public interface FallingBlock extends Entity, me.samsuik.sakura.entity.merge.Mergeable { // Sakura
+ 
+     /**
+      * Get the Material of the falling block
+@@ -183,4 +_,19 @@
+      */
+     void shouldAutoExpire(boolean autoExpires);
+     // Paper end - Auto expire setting
++    // Sakura start
++    /**
++     * Gets if falling block has height parity
++     *
++     * @return parity
++     */
++    boolean getHeightParity();
++
++    /**
++     * Sets falling block height parity
++     *
++     * @param parity value
++     */
++    void setHeightParity(boolean parity);
++    // Sakura end
+ }

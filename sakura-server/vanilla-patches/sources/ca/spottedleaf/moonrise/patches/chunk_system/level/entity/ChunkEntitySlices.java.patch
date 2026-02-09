@@ -1,0 +1,155 @@
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+@@ -286,6 +_,12 @@
+         return true;
+     }
+ 
++    // Sakura start - expose section entity array
++    public Entity[] getSectionEntities(int sectionY) {
++        return this.allEntities.getSectionEntities(sectionY);
++    }
++    // Sakura end - expose section entity array
++
+     public void getHardCollidingEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate) {
+         this.hardCollidingEntities.getEntities(except, box, into, predicate);
+     }
+@@ -297,7 +_,14 @@
+ 
+     public boolean getEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate,
+                                final int maxCount) {
+-        return this.allEntities.getEntitiesLimited(except, box, into, predicate, maxCount);
++        // Sakura start - add maxSearch to getEntities
++        return this.getEntities(except, box, into, predicate, maxCount, Integer.MAX_VALUE);
++    }
++
++    public boolean getEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate,
++                               final int maxCount, final int maxSearch) {
++        return this.allEntities.getEntitiesLimited(except, box, into, predicate, maxCount, maxSearch);
++        // Sakura end - add maxSearch to getEntities
+     }
+ 
+     public <T extends Entity> void getEntities(final EntityType<?> type, final AABB box, final List<? super T> into,
+@@ -372,6 +_,13 @@
+ 
+         private E[] storage;
+         private int size;
++        // Sakura start - copy implementation from EntityList
++        private it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap entityToIndex = null;
++        private void setupIndexMap() {
++            this.entityToIndex = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap(2, 0.8f);
++            this.entityToIndex.defaultReturnValue(Integer.MIN_VALUE);
++        }
++        // Sakura end - copy implementation from EntityList
+ 
+         public BasicEntityList() {
+             this(0);
+@@ -392,6 +_,7 @@
+         private void resize() {
+             if (this.storage == EMPTY) {
+                 this.storage = (E[])new Entity[DEFAULT_CAPACITY];
++                this.setupIndexMap(); // Sakura - copy implementation from EntityList
+             } else {
+                 this.storage = Arrays.copyOf(this.storage, this.storage.length * 2);
+             }
+@@ -405,6 +_,7 @@
+             } else {
+                 this.storage[idx] = entity;
+             }
++            this.entityToIndex.put(entity.getId(), idx); // Sakura - copy implementation from EntityList
+         }
+ 
+         public int indexOf(final E entity) {
+@@ -420,24 +_,32 @@
+         }
+ 
+         public boolean remove(final E entity) {
+-            final int idx = this.indexOf(entity);
+-            if (idx == -1) {
+-                return false;
+-            }
+-
+-            final int size = --this.size;
+-            final E[] storage = this.storage;
+-            if (idx != size) {
+-                System.arraycopy(storage, idx + 1, storage, idx, size - idx);
+-            }
+-
+-            storage[size] = null;
++            // Sakura start - copy implementation from EntityList
++            if (this.entityToIndex == null) {
++                return false;
++            }
++
++            final int index = this.entityToIndex.remove(entity.getId());
++            if (index == Integer.MIN_VALUE) {
++                return false;
++            }
++
++            // move the entity at the end to this index
++            final int endIndex = --this.size;
++            final E end = this.storage[endIndex];
++            if (index != endIndex) {
++                // not empty after this call
++                this.entityToIndex.put(end.getId(), index); // update index
++            }
++            this.storage[index] = end;
++            this.storage[endIndex] = null;
++            // Sakura end - copy implementation from EntityList
+ 
+             return true;
+         }
+ 
+         public boolean has(final E entity) {
+-            return this.indexOf(entity) != -1;
++            return this.entityToIndex != null && this.entityToIndex.containsKey(entity.getId()); // Sakura - copy implementation from EntityList
+         }
+     }
+ 
+@@ -484,6 +_,16 @@
+             }
+         }
+ 
++        // Sakura start - expose section entity array
++        public Entity[] getSectionEntities(int sectionY) {
++            BasicEntityList<Entity> list = this.entitiesBySection[sectionY - this.slices.minSection];
++            if (list != null) {
++                return list.storage;
++            }
++            return new Entity[0];
++        }
++        // Sakura end - expose section entity array
++
+         public void getEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate) {
+             if (this.count == 0) {
+                 return;
+@@ -524,6 +_,13 @@
+ 
+         public boolean getEntitiesLimited(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate,
+                                           final int maxCount) {
++            // Sakura start - add maxSearch to getEntities
++            return this.getEntitiesLimited(except, box, into, predicate, maxCount, Integer.MAX_VALUE);
++        }
++
++        public boolean getEntitiesLimited(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate,
++                                          final int maxCount, final int maxSearch) {
++            // Sakura end - add maxSearch to getEntities
+             if (this.count == 0) {
+                 return false;
+             }
+@@ -545,8 +_,14 @@
+ 
+                 final Entity[] storage = list.storage;
+ 
+-                for (int i = 0, len = Math.min(storage.length, list.size()); i < len; ++i) {
+-                    final Entity entity = storage[i];
++                // Sakura start - add maxSearch to getEntities
++                final int len = Math.min(storage.length, list.size());
++                final int offset = this.slices.world.random.nextInt(len);
++                for (int i = 0; i < len; ++i) {
++                    final int pos = (i + offset) % len;
++                    final Entity entity = storage[pos];
++                    if (i > maxSearch) break;
++                    // Sakura end - add maxSearch to getEntities
+ 
+                     if (entity == null || entity == except || !entity.getBoundingBox().intersects(box)) {
+                         continue;

@@ -1,0 +1,21 @@
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -204,6 +_,18 @@
+         return this.entity.isInWater();
+     }
+ 
++    // Sakura start - entity pushed by fluid api
++    @Override
++    public boolean isPushedByFluid() {
++        return this.getHandle().isPushedByFluid();
++    }
++
++    @Override
++    public void setPushedByFluid(boolean push) {
++        this.getHandle().pushedByFluid = push;
++    }
++    // Sakura end - entity pushed by fluid api
++
+     @Override
+     public World getWorld() {
+         return this.entity.level().getWorld();

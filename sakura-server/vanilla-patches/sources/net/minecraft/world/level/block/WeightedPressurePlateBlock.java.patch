@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/WeightedPressurePlateBlock.java
++++ b/net/minecraft/world/level/block/WeightedPressurePlateBlock.java
+@@ -3,6 +_,7 @@
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.MapCodec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
++import me.samsuik.sakura.entity.merge.MergeableEntity;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
+@@ -40,6 +_,11 @@
+ 
+     @Override
+     protected int getSignalStrength(Level level, BlockPos pos) {
++        // Sakura start - merge cannon entities
++        return this.getSignalStrength(level, pos, false);
++    }
++    protected final int getSignalStrength(Level level, BlockPos pos, boolean entityInside) {
++        // Sakura end - merge cannon entities
+         // CraftBukkit start
+         // int min = Math.min(getEntityCount(level, TOUCH_AABB.move(pos), Entity.class), this.maxWeight);
+         int min = 0;
+@@ -55,7 +_,13 @@
+ 
+             // We only want to block turning the plate on if all events are cancelled
+             if (!cancellable.isCancelled()) {
+-                min++;
++                // Sakura - merge cannon entities
++                int count = 1;
++                if (!entityInside && entity instanceof MergeableEntity mergeEntity) {
++                    count = mergeEntity.getMergeEntityData().getCount();
++                }
++                min += count;
++                // Sakura - merge cannon entities
+             }
+         }
+ 

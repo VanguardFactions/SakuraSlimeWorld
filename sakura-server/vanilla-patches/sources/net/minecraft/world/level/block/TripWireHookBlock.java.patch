@@ -1,0 +1,14 @@
+--- a/net/minecraft/world/level/block/TripWireHookBlock.java
++++ b/net/minecraft/world/level/block/TripWireHookBlock.java
+@@ -169,6 +_,11 @@
+             if (i > 0) {
+                 BlockPos blockPosx = pos.relative(direction, i);
+                 Direction opposite = direction.getOpposite();
++                // Sakura start - replace explosion density cache
++                if (!level.paperConfig().environment.optimizeExplosions) {
++                    level.densityCache.invalidate();
++                }
++                // Sakura end - replace explosion density cache
+                 level.setBlock(blockPosx, blockState1.setValue(FACING, opposite), 3);
+                 notifyNeighbors(block, level, blockPosx, opposite);
+                 emitState(level, blockPosx, flag2, flag3, flag, flag1);

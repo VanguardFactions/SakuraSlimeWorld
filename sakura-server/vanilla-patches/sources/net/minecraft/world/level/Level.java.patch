@@ -1,0 +1,83 @@
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -168,6 +_,18 @@
+         return this.paperConfig;
+     }
+     // Paper end - add paper world config
++    // Sakura start - sakura configuration files
++    private final me.samsuik.sakura.configuration.WorldConfiguration sakuraConfig;
++    public final me.samsuik.sakura.configuration.WorldConfiguration sakuraConfig() {
++        return this.sakuraConfig;
++    }
++    // Sakura end - sakura configuration files
++    // Sakura start - local config
++    private final me.samsuik.sakura.local.config.LocalConfigManager localConfig = new me.samsuik.sakura.local.config.LocalConfigManager(this);
++    public final me.samsuik.sakura.local.config.LocalConfigManager localConfig() {
++        return this.localConfig;
++    }
++    // Sakura end - local config
+ 
+     public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
+     public static BlockPos lastPhysicsProblem; // Spigot
+@@ -825,6 +_,8 @@
+         return chunk != null ? chunk.getNoiseBiome(x, y, z) : this.getUncachedNoiseBiome(x, y, z);
+     }
+     // Paper end - optimise random ticking
++    public final me.samsuik.sakura.entity.merge.EntityMergeHandler mergeHandler = new me.samsuik.sakura.entity.merge.EntityMergeHandler(); // Sakura - merge cannon entities
++    public final me.samsuik.sakura.explosion.density.BlockDensityCache densityCache = new me.samsuik.sakura.explosion.density.BlockDensityCache(); // Sakura - replace explosion density cache
+ 
+     protected Level(
+         WritableLevelData levelData,
+@@ -840,6 +_,7 @@
+         org.bukkit.World.Environment env, // CraftBukkit
+         java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
+         io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        java.util.function.Supplier<me.samsuik.sakura.configuration.WorldConfiguration> sakuraWorldConfigCreator, // Sakura - sakura configuration files
+         java.util.concurrent.Executor executor // Paper - Anti-Xray
+     ) {
+         // Paper start - getblock optimisations - cache world height/sections
+@@ -853,6 +_,7 @@
+         // Paper end - getblock optimisations - cache world height/sections
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName()); // Spigot
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
++        this.sakuraConfig = sakuraWorldConfigCreator.get(); // Sakura - sakura configuration files
+         this.generator = gen;
+         this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
+ 
+@@ -1496,6 +_,7 @@
+ 
+     public <T extends Entity> void guardEntityTick(Consumer<T> consumerEntity, T entity) {
+         try {
++            entity.storeEntityState(); // Sakura - store entity data/state
+             consumerEntity.accept(entity);
+         } catch (Throwable var6) {
+             // Paper start - Prevent block entity and entity crashes
+@@ -1774,10 +_,18 @@
+         this.getEntities(entityTypeTest, bounds, predicate, output, Integer.MAX_VALUE);
+     }
+ 
+-    // Paper start - rewrite chunk system
++    // Sakura start - add maxSearch to getEntities
+     public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
+                                                final AABB boundingBox, final Predicate<? super T> predicate,
+                                                final List<? super T> into, final int maxCount) {
++        this.getEntities(entityTypeTest, boundingBox, predicate, into, maxCount, Integer.MAX_VALUE);
++    }
++
++    // Paper start - rewrite chunk system
++    public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
++                                               final AABB boundingBox, final Predicate<? super T> predicate,
++                                               final List<? super T> into, final int maxCount, final int maxSearch) {
++        // Sakura end - add maxSearch to getEntities
+         Profiler.get().incrementCounter("getEntities");
+ 
+         if (entityTypeTest instanceof net.minecraft.world.entity.EntityType<T> byType) {
+@@ -1794,7 +_,7 @@
+ 
+         if (entityTypeTest == null) {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount);
++                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount, maxSearch); // Sakura - add maxSearch to getEntities
+                 ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {

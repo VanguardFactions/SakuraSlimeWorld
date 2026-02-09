@@ -1,0 +1,80 @@
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -129,7 +_,7 @@
+     public final AtomicInteger tickingGenerated = new AtomicInteger();  // Paper - public
+     private final String storageName;
+     private final PlayerMap playerMap = new PlayerMap();
+-    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
++    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new me.samsuik.sakura.utils.collections.TrackedEntityChunkMap(); // Sakura - optimised tracked entity map
+     private final Long2ByteMap chunkTypeCache = new Long2ByteOpenHashMap();
+     // Paper - rewrite chunk system
+     public int serverViewDistance;
+@@ -168,6 +_,7 @@
+         this.handleLegacyStructureIndex(pos);
+     }
+     // Paper end - rewrite chunk system
++    private final it.unimi.dsi.fastutil.longs.Long2IntMap minimalEntities; // Sakura - client visibility settings; minimal tnt/sand
+ 
+     public ChunkMap(
+         ServerLevel level,
+@@ -230,6 +_,10 @@
+         );
+         this.setServerViewDistance(viewDistance);
+         this.worldGenContext = new WorldGenContext(level, generator, structureManager, this.lightEngine, null, this::setChunkUnsaved); // Paper - rewrite chunk system
++        // Sakura start - client visibility settings; minimal tnt/sand
++        this.minimalEntities = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
++        this.minimalEntities.defaultReturnValue(Integer.MIN_VALUE);
++        // Sakura end - client visibility settings; minimal tnt/sand
+     }
+ 
+     private void setChunkUnsaved(ChunkPos chunkPos) {
+@@ -919,6 +_,8 @@
+                 tracker.serverEntity.sendChanges();
+             }
+         }
++
++        this.minimalEntities.clear(); // Sakura - client visibility settings; minimal tnt/sand
+     }
+     // Paper end - optimise entity tracker
+ 
+@@ -1129,6 +_,32 @@
+             return !this.seenBy.isEmpty();
+         }
+         // Paper end - optimise entity tracker
++        // Sakura start - client visibility settings; entity visibility
++        private boolean checkEntityVisibility(final ServerPlayer player) {
++            final Entity entity = this.entity;
++            final me.samsuik.sakura.player.visibility.VisibilitySettings settings = player.visibilitySettings;
++            if (!settings.playerModified() || !(entity.isPrimedTNT || entity.isFallingBlock)) {
++                return true;
++            }
++            final me.samsuik.sakura.player.visibility.VisibilityType type;
++            if (entity.isPrimedTNT) {
++                type = me.samsuik.sakura.player.visibility.VisibilityTypes.TNT;
++            } else {
++                type = me.samsuik.sakura.player.visibility.VisibilityTypes.SAND;
++            }
++            final me.samsuik.sakura.player.visibility.VisibilityState state = settings.get(type);
++            if (state == me.samsuik.sakura.player.visibility.VisibilityState.MINIMAL) {
++                final long key = entity.blockPosition().asLong() ^ entity.getType().hashCode();
++                final long visibleEntity = ChunkMap.this.minimalEntities.get(key);
++                if (visibleEntity != Integer.MIN_VALUE) {
++                    return entity.getId() == visibleEntity;
++                } else {
++                    ChunkMap.this.minimalEntities.put(key, entity.getId());
++                }
++            }
++            return state != me.samsuik.sakura.player.visibility.VisibilityState.OFF;
++        }
++        // Sakura end - client visibility settings; entity visibility
+ 
+         public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
+             this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this::broadcast, this.seenBy); // CraftBukkit
+@@ -1196,6 +_,7 @@
+                 }
+                 flag = flag && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
+                 // Paper end - Configurable entity tracking range by Y
++                flag = flag && this.checkEntityVisibility(player); // Sakura start - client visibility settings; entity visibility
+                 // CraftBukkit start - respect vanish API
+                 if (flag && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
+                     flag = false;

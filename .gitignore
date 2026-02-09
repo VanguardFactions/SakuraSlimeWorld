@@ -1,0 +1,17 @@
+# project files
+.gradle/
+.idea/
+build/
+run/
+
+# upstream
+paper-api
+paper-server
+paper-api-generator
+
+# sakura
+sakura-api/build.gradle.kts
+sakura-server/build.gradle.kts
+sakura-server/src/vanilla
+
+!gradle/wrapper/gradle-wrapper.jar
